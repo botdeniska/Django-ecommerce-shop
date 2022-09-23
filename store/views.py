@@ -58,8 +58,6 @@ def store(request):
     data = cart_data(request)
 
     cart_items = data['cart_items']
-    order = data['order']
-    items = data['items']
 
     products = Product.objects.all()
     context = {'products': products, 'cart_items': cart_items}
@@ -99,17 +97,17 @@ def update_item(request):
     product = Product.objects.get(id=product_id)
     order, created = Order.objects.get_or_create(customer=customer, complete=False)
 
-    orderItem, created = OrderItem.objects.get_or_create(order=order, product=product)
+    order_item, created = OrderItem.objects.get_or_create(order=order, product=product)
 
     if action == 'add':
-        orderItem.quantity = (orderItem.quantity + 1)
+        order_item.quantity = (order_item.quantity + 1)
     elif action == 'remove':
-        orderItem.quantity = (orderItem.quantity - 1)
+        order_item.quantity = (order_item.quantity - 1)
 
-    orderItem.save()
+    order_item.save()
 
-    if orderItem.quantity <= 0:
-        orderItem.delete()
+    if order_item.quantity <= 0:
+        order_item.delete()
 
     return JsonResponse('Item was added', safe=False)
 
@@ -127,8 +125,9 @@ def process_order(request):
     total = float(data['form']['total'])
     order.transaction_id = transaction_id
 
-    if total == order.get_cart_total:
+    if total == float(order.get_cart_total):
         order.complete = True
+        print(order.complete)
     order.save()
 
     if order.shipping:

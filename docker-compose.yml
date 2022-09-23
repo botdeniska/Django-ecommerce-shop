@@ -1,0 +1,10 @@
+version: '3.10'
+services:
+  web:
+    container_name: web_app
+    build: .
+    restart: on-failure
+    ports:
+      - "8000:8000"
+    volumes:
+      - "./scr:/site/scr"
