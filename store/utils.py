@@ -1,5 +1,4 @@
 import json
-
 from .models import *
 
 
@@ -18,30 +17,25 @@ def cookie_cart(request):
     for i in cart:
         # We use try block to prevent items in cart that may have been removed from causing error
         try:
-            cart_items += cart[i]['quantity']
+            if (cart[i]['quantity'] > 0):  # items with negative quantity = lot of freebies
+                cart_items += cart[i]['quantity']
 
-            product = Product.objects.get(id=i)
-            total = (product.price * cart[i]['quantity'])
+                product = Product.objects.get(id=i)
+                total = (product.price * cart[i]['quantity'])
 
-            order['get_cart_total'] += total
-            order['get_cart_items'] += cart[i]['quantity']
+                order['get_cart_total'] += total
+                order['get_cart_items'] += cart[i]['quantity']
 
-            item = {
-                'id': product.id,
-                'product': {
+                item = {
                     'id': product.id,
-                    'name': product.name,
-                    'price': product.price,
-                    'image_url': product.image_url
-                },
-                'quantity': cart[i]['quantity'],
-                'digital': product.digital,
-                'get_total': total,
-            }
-            items.append(item)
+                    'product': {'id': product.id, 'name': product.name, 'price': product.price,
+                                'image_url': product.image_url}, 'quantity': cart[i]['quantity'],
+                    'digital': product.digital, 'get_total': total,
+                }
+                items.append(item)
 
-            if not product.digital:
-                order['shipping'] = True
+                if not product.digital:
+                    order['shipping'] = True
         except:
             pass
 
@@ -83,9 +77,9 @@ def guest_order(request, data):
 
     for item in items:
         product = Product.objects.get(id=item['id'])
-        order_item = OrderItem.objects.create(
+        orderItem = OrderItem.objects.create(
             product=product,
             order=order,
-            quantity=item['quantity'],
+            quantity=(item['quantity'] if item['quantity'] > 0 else -1 * item['quantity']),
         )
     return customer, order

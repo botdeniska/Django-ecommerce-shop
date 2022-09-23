@@ -1,4 +1,4 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse
 from django.views.generic.edit import FormView
 from django.contrib.auth.views import LoginView
@@ -9,7 +9,7 @@ import json
 import datetime
 
 from .models import Customer, Product, Order, OrderItem, ShippingAddress
-from .utils import cart_data, guest_order
+from .utils import guest_order, cart_data
 from .forms import CreateUserForm
 
 
@@ -41,10 +41,25 @@ class Register(FormView):
         return super(Register, self).get(*args, **kwargs)
 
 
+def info(request, id):
+    data = cart_data(request)
+
+    cart_items = data['cart_items']
+
+    product = get_object_or_404(Product, id=id)
+    context = {'product': product,
+               'title': product.name,
+               'cart_items': cart_items,
+               }
+    return render(request, 'store/info.html', context)
+
+
 def store(request):
     data = cart_data(request)
 
     cart_items = data['cart_items']
+    order = data['order']
+    items = data['items']
 
     products = Product.objects.all()
     context = {'products': products, 'cart_items': cart_items}
@@ -84,17 +99,17 @@ def update_item(request):
     product = Product.objects.get(id=product_id)
     order, created = Order.objects.get_or_create(customer=customer, complete=False)
 
-    order_item, created = OrderItem.objects.get_or_create(order=order, product=product)
+    orderItem, created = OrderItem.objects.get_or_create(order=order, product=product)
 
     if action == 'add':
-        order_item.quantity = (order_item.quantity + 1)
+        orderItem.quantity = (orderItem.quantity + 1)
     elif action == 'remove':
-        order_item.quantity = (order_item.quantity - 1)
+        orderItem.quantity = (orderItem.quantity - 1)
 
-    order_item.save()
+    orderItem.save()
 
-    if order_item.quantity <= 0:
-        order_item.delete()
+    if orderItem.quantity <= 0:
+        orderItem.delete()
 
     return JsonResponse('Item was added', safe=False)
 
